@@ -1,14 +1,26 @@
 {
-  "name": "Control de Clientes",
-  "short_name": "Clientes",
-  "description": "Gestión de visitas comerciales Franez",
-  "start_url": "/",
+  "name": "Franez Control de Visitas",
+  "short_name": "Franez",
+  "description": "Gestión de visitas comerciales offline",
+  "start_url": "/Control_Visitas/",
+  "scope": "/Control_Visitas/",
   "display": "standalone",
-  "background_color": "#0f1f12",
-  "theme_color": "#0f1f12",
   "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#4f8ef7",
+  "lang": "es",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/Control_Visitas/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/Control_Visitas/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }
