@@ -1,0 +1,9 @@
+{
+  "version": "5.2",
+  "fecha": "2026-05-03",
+  "cambios": [
+    "Importación respeta zonaVisita del JSON aunque el cliente ya exista en la app",
+    "Clientes de Algeciras, Tarifa, La Línea, San Roque y Alcaidesa asignados a zona Campo Gibraltar",
+    "Añadido tipo nevera para clientes inactivos"
+  ]
+}
