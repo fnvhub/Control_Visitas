@@ -233,6 +233,8 @@ textarea.efield{height:auto;min-height:60px;padding:8px 11px;resize:none;line-he
 .sec:first-child{margin-top:0}
 .sec-t{font-size:11.5px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}.sec-c{font-size:11px;color:var(--text3)}
 .card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:13px 15px;margin-bottom:10px}
+#ver-footer{text-align:center;font-size:11px;color:var(--text3);margin-top:14px;padding-bottom:6px;cursor:pointer;user-select:none}
+#ver-footer:hover{color:var(--accent)}
 ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 @media(min-width:700px){#msheet{border-radius:var(--r);margin:auto;max-width:560px}#moverlay{align-items:center}}
 </style>
@@ -376,7 +378,7 @@ textarea.efield{height:auto;min-height:60px;padding:8px 11px;resize:none;line-he
         <div class="btn danger sm" style="width:70px" onclick="clearData()">Borrar</div>
       </div>
     </div>
-    <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;padding-bottom:6px">Control de Visitas · Franez · v5.2</div>
+    <div id="ver-footer" onclick="openVersion()">Control de Visitas · Franez · <span id="ver-num">cargando...</span></div>
   </div>
 
 </div>
@@ -403,6 +405,7 @@ let wkOff=0,wkDay=null,homeOpenDia=null,pendingImport=null,syncOn=true;
 const DIAS=['lun','mar','mie','jue','vie'];
 const DNOM={lun:'Lun',mar:'Mar',mie:'Miérc',jue:'Jue',vie:'Vier'};
 const DFULL={lun:'Lunes',mar:'Martes',mie:'Miércoles',jue:'Jueves',vie:'Viernes'};
+
 
 // ── RATIO ──
 function esFarmaHerbo(c){return /farmac|herbol|herborist/i.test(c.especialidad||'');}
