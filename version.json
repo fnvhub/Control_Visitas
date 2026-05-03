@@ -1,12 +1,19 @@
 {
-  "version": "5.2.1",
+  "version": "5.2.2",
   "fecha": "2026-05-03",
   "cambios": [
-    "Corrección: planificación semanal distribuye clientes distintos cada día sin repetir",
-    "Corrección: al ampliar visitas del día no repite clientes ya asignados en otros días",
-    "Clientes en nevera excluidos de sugerencias de ruta y zona de hoy"
+    "Versión en pie de Ajustes se lee siempre desde version.json, sin hardcodear en el HTML"
   ],
   "historial": [
+    {
+      "version": "5.2.1",
+      "fecha": "2026-05-03",
+      "cambios": [
+        "Corrección: planificación semanal distribuye clientes distintos cada día sin repetir",
+        "Corrección: al ampliar visitas del día no repite clientes ya asignados en otros días",
+        "Clientes en nevera excluidos de sugerencias de ruta y zona de hoy"
+      ]
+    },
     {
       "version": "5.2.0",
       "fecha": "2026-05-03",
