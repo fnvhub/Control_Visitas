@@ -790,7 +790,7 @@ function processJSON(text){
 }
 function confirmImport(){
   if(!pendingImport)return;
-  const merged=pendingImport.map(nc=>{const ex=C.find(x=>x.id===nc.id);if(ex)return{...nc,tipoVisita:nc.tipoVisita||ex.tipoVisita||'',zonaVisita:nc.zonaVisita||ex.zonaVisita||'',diasVisita:nc.diasVisita||ex.diasVisita||null,ultimaVisita:ex.ultimaVisita||nc.ultimaVisita||'',_local:ex._local||false};return nc;});
+  const merged=pendingImport.map(nc=>{const ex=C.find(x=>x.id===nc.id);if(ex)return{...nc,tipoVisita:nc.tipoVisita||ex.tipoVisita||'',zonaVisita:nc.zonaVisita!==undefined&&nc.zonaVisita!==''?nc.zonaVisita:ex.zonaVisita||'',diasVisita:nc.diasVisita||ex.diasVisita||null,ultimaVisita:ex.ultimaVisita||nc.ultimaVisita||'',_local:ex._local||false};return nc;});
   const locales=C.filter(c=>c._local&&!pendingImport.find(x=>x.id===c.id));
   C=[...merged,...locales];save();pendingImport=null;document.getElementById('import-preview').style.display='none';toast('✅ '+C.length+' clientes cargados');goView('home');
 }
