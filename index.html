@@ -362,7 +362,7 @@ textarea.efield{height:auto;min-height:60px;padding:8px 11px;resize:none;line-he
         <div class="btn danger sm" style="width:70px" onclick="clearData()">Borrar</div>
       </div>
     </div>
-    <div style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;padding-bottom:6px">Control de Visitas · Franez · v5.2.1</div>
+    <div id="ver-footer" onclick="openVersion()" style="text-align:center;font-size:11px;color:var(--text3);margin-top:14px;padding-bottom:6px;cursor:pointer;user-select:none">Control de Visitas · Franez · <span id="ver-num">v5.2.1</span></div>
   </div>
 
 </div>
@@ -393,6 +393,10 @@ let pendingImport=null;
 const DIAS=['lun','mar','mie','jue','vie'];
 const DNOM={lun:'Lun',mar:'Mar',mie:'Miérc',jue:'Jue',vie:'Vier'};
 const DFULL={lun:'Lunes',mar:'Martes',mie:'Miércoles',jue:'Jueves',vie:'Viernes'};
+
+let APP_VERSION={version:'5.2.1',fecha:'—',cambios:[]};
+fetch('/Control_Visitas/version.json?'+Date.now()).then(r=>r.json()).then(v=>{APP_VERSION=v;const el=document.getElementById('ver-num');if(el)el.textContent='v'+v.version;}).catch(()=>{});
+function openVersion(){const v=APP_VERSION;const lista=v.cambios&&v.cambios.length?v.cambios.map(c=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)">· ${c}</div>`).join(''):'<div style="color:var(--text3);font-size:13px">Sin detalles</div>';const hist=v.historial&&v.historial.length?v.historial.map(h=>`<div style="margin-top:12px"><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">v${h.version} · ${h.fecha}</div>${h.cambios.map(c=>`<div style="padding:4px 0;font-size:12px;color:var(--text2)">· ${c}</div>`).join('')}</div>`).join(''):'';document.getElementById('mcontent').innerHTML=`<div style="font-size:16px;font-weight:600;margin-bottom:4px">Control de Visitas · Franez</div><div style="font-size:13px;color:var(--accent);font-weight:600;margin-bottom:2px">v${v.version}</div><div style="font-size:11px;color:var(--text3);margin-bottom:16px">${v.fecha}</div><div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Cambios en esta versión</div>${lista}${hist?`<div style="margin-top:16px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Versiones anteriores</div>${hist}`:''}<div class="btns" style="margin-top:16px"><div class="btn full" onclick="closeModal()">Cerrar</div></div>`;openModal();}
 
 // ══════ PERSISTENCIA ══════
 function save(){
