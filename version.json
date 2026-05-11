@@ -1,10 +1,20 @@
 {
-  "version": "5.2.2",
-  "fecha": "2026-05-03",
+  "version": "5.3.0",
+  "fecha": "2026-05-12",
   "cambios": [
-    "Versión en pie de Ajustes se lee siempre desde version.json, sin hardcodear en el HTML"
+    "Score diferenciado PDV vs Sanitario: farmacias y herbolarios usan ultimoPedido además de ultimaVisita",
+    "Clientes tipo C solo aparecen como relleno cuando quedan huecos libres en el día",
+    "Indicador de ratio PDV/Sanitario en planificación diaria",
+    "Indicador de urgencia (días sin visita) visible en panel de semana"
   ],
   "historial": [
+    {
+      "version": "5.2.2",
+      "fecha": "2026-05-03",
+      "cambios": [
+        "Versión en pie de Ajustes se lee siempre desde version.json, sin hardcodear en el HTML"
+      ]
+    },
     {
       "version": "5.2.1",
       "fecha": "2026-05-03",
