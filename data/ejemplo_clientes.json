@@ -1,0 +1,19 @@
+[
+  {
+    "name": "Farmacia Ejemplo Centro",
+    "locality": "Málaga",
+    "zone": "Málaga",
+    "type": "Farmacia",
+    "category": "A",
+    "frequency": 30,
+    "lastVisit": "2026-10-01"
+  },
+  {
+    "name": "Terapeuta Ejemplo",
+    "locality": "Fuengirola",
+    "zone": "Fuengirola",
+    "type": "Terapeuta",
+    "category": "B",
+    "frequency": 45
+  }
+]
