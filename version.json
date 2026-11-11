@@ -1,12 +1,13 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "name": "Control_Visitas_MVP",
   "release_date": "2026-11-11",
   "changes": [
-    "Rediseño visual inspirado en paneles de productividad",
-    "Modo día y modo noche con preferencia guardada",
-    "Diseño adaptable a tablet, portátil y teléfono",
-    "Paneles en columnas y tarjetas con etiquetas visuales",
-    "Se mantienen las funciones de planificación y gestión de datos"
+    "Apariencia Día, Noche y Según el sistema",
+    "Pestañas independientes Inicio, Cartera, Semana, Datos, Ajustes y Acerca de",
+    "Preferencia de apertura en Inicio o última pestaña",
+    "Prospecciones marcables como interesantes con prioridad comercial propia",
+    "Prioridad de prospección integrada en puntuación de propuestas",
+    "Historial de diez mejoras documentadas"
   ]
 }
