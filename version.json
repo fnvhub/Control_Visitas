@@ -1,52 +1,11 @@
 {
-  "version": "5.3.0",
-  "fecha": "2026-05-12",
-  "cambios": [
-    "Score diferenciado PDV vs Sanitario: farmacias y herbolarios usan ultimoPedido además de ultimaVisita",
-    "Clientes tipo C solo aparecen como relleno cuando quedan huecos libres en el día",
-    "Indicador de ratio PDV/Sanitario en planificación diaria",
-    "Indicador de urgencia (días sin visita) visible en panel de semana"
-  ],
-  "historial": [
-    {
-      "version": "5.2.2",
-      "fecha": "2026-05-03",
-      "cambios": [
-        "Versión en pie de Ajustes se lee siempre desde version.json, sin hardcodear en el HTML"
-      ]
-    },
-    {
-      "version": "5.2.1",
-      "fecha": "2026-05-03",
-      "cambios": [
-        "Corrección: planificación semanal distribuye clientes distintos cada día sin repetir",
-        "Corrección: al ampliar visitas del día no repite clientes ya asignados en otros días",
-        "Clientes en nevera excluidos de sugerencias de ruta y zona de hoy"
-      ]
-    },
-    {
-      "version": "5.2.0",
-      "fecha": "2026-05-03",
-      "cambios": [
-        "Importación respeta zonaVisita del JSON aunque el cliente ya exista en la app",
-        "Clientes de Algeciras, Tarifa, La Línea, San Roque y Alcaidesa asignados a zona Campo Gibraltar",
-        "Añadido tipo nevera para clientes inactivos (aparecen en listados pero no se ofrecen como visita)"
-      ]
-    },
-    {
-      "version": "5.1.0",
-      "fecha": "2026-05-03",
-      "cambios": [
-        "Sistema de versiones dinámico: version.json controla la versión mostrada en la app",
-        "Modal de versión en Ajustes al tocar el pie de pantalla"
-      ]
-    },
-    {
-      "version": "5.0.0",
-      "fecha": "2026-05-03",
-      "cambios": [
-        "Versión base"
-      ]
-    }
+  "version": "1.0.1",
+  "name": "Control_Visitas_MVP",
+  "release_date": "2026-11-11",
+  "changes": [
+    "Corregido el cálculo de atraso para clientes sin visitas registradas",
+    "Estado visible Sin visita registrada",
+    "Versión visible en la cabecera y pie de aplicación",
+    "Mantenidos los límites semanales y protección de datos manuales"
   ]
 }
