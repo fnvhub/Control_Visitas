@@ -1,4 +1,4 @@
-const APP_VERSION = "1.0.1";
+const APP_VERSION = "1.1.0";
 const $ = s => document.querySelector(s);
 const KEY = "control_visitas_mvp";
 const emptyDB = () => ({clients: [], visits: [], plan: {}});
@@ -27,15 +27,19 @@ function daysSince(date){if(!date)return null;const a=new Date(`${date}T12:00:00
 function overdueDays(c){const last=lastVisit(c);if(!last||!c.frequency)return null;return daysSince(last)-c.frequency;}
 function score(c){const cat=({A:100,B:60,C:30}[String(c.category).toUpperCase()]||30);const due=c.nextVisit&&c.nextVisit<=today()?120:0;const late=overdueDays(c);const overdue=late===null?0:Math.max(-20,Math.min(100,late));const p=clean(c.commercialPriority);const commercial=["alta","high","1"].includes(p)?80:p?20:0;return cat+due+overdue+commercial;}
 function currentWeekPlan(){const ds=weekDates();ds.forEach(d=>{if(!Array.isArray(db.plan[d]))db.plan[d]=[];});return ds;}
-function tab(id){["cartera","semana","datos"].forEach(x=>$("#"+x).hidden=x!==id);}
+function tab(id){
+ const target=$("#"+id);
+ if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+ document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
+}
 function render(){
  const dates=currentWeekPlan(),oldZone=$("#zone").value,zones=[...new Set(db.clients.map(c=>c.currentZone||c.zone).filter(Boolean))].sort();
  $("#zone").innerHTML='<option value="">Todas las zonas</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");$("#zone").value=zones.includes(oldZone)?oldZone:"";
  const z=$("#zone").value,type=$("#type").value,q=clean($("#search").value),overdue=db.clients.filter(c=>{const n=overdueDays(c);return n!==null&&n>0;}).length;
  $("#stats").innerHTML=`<span><b>${db.clients.length}</b><br><small>Registros</small></span><span><b>${overdue}</b><br><small>Atrasados</small></span><span><b>${planCount()}/23</b><br><small>Plan semanal</small></span>`;
  const rows=db.clients.filter(c=>(!z||(c.currentZone||c.zone)===z)&&(!type||c.type===type)&&(!q||clean(c.name+" "+c.locality+" "+(c.currentZone||c.zone)).includes(q))).sort((a,b)=>score(b)-score(a));
- $("#clients").innerHTML=rows.map(c=>{const late=overdueDays(c),status=!lastVisit(c)?"Sin visita registrada":!c.frequency?"Sin frecuencia":late>0?`<span class="late">Atraso ${late} días</span>`:"En plazo";return `<article class="client"><div><b>${esc(c.name)}</b><div class="meta">${esc(c.locality)} · ${esc(c.currentZone||c.zone)}</div><div class="meta">${esc(c.type)} · Cat. ${esc(c.category)} · ${status}${c.nextVisit?` · Próxima: ${esc(c.nextVisit)}`:""}</div></div><div><button onclick="plan('${c.id}')">Plan</button> <button onclick="visit('${c.id}')">Visita</button></div></article>`;}).join("")||"No hay clientes.";
- $("#week").innerHTML=dates.map((d,i)=>{const items=db.plan[d]||[];return `<div class="weekday"><b>${weekdayNames[i]} · ${d} (${items.length}/${dayCap(i)})</b>${items.map(id=>getClient(id)).filter(Boolean).map(c=>`<div class="dayitem">${esc(c.name)} <small>${esc(c.currentZone||c.zone)}</small><button onclick="removePlan('${d}','${c.id}')">Quitar</button></div>`).join("")}</div>`;}).join("")+`<p><b>Total: ${planCount()} / 23 visitas.</b> Propuesta orientativa por prioridad y zona registrada; no calcula tiempos ni rutas por carretera. Las visitas ya colocadas se conservan.</p>`;
+ $("#clients").innerHTML=rows.map(c=>{const late=overdueDays(c),status=!lastVisit(c)?"Sin visita registrada":!c.frequency?"Sin frecuencia":late>0?`<span class="late">Atraso ${late} días</span>`:"En plazo";return `<article class="client"><div class="client-main"><b>${esc(c.name)}</b><div class="tags"><span class="tag zone-tag">${esc(c.currentZone||c.zone||"Zona pendiente")}</span><span class="tag type-tag">${esc(c.type)}</span><span class="tag cat-${String(c.category).toLowerCase()}">Cat. ${esc(c.category)}</span></div><div class="meta">${esc(c.locality)} · ${status}${c.nextVisit?` · Próxima: ${esc(c.nextVisit)}`:""}</div></div><div class="client-actions"><button onclick="plan('${c.id}')">+ Plan</button><button class="button-soft" onclick="visit('${c.id}')">Visita</button></div></article>`;}).join("")||"No hay clientes.";
+ $("#week").innerHTML=dates.map((d,i)=>{const items=db.plan[d]||[];return `<div class="weekday"><div class="weekday-head"><b>${weekdayNames[i]}</b><span class="day-count">${items.length}/${dayCap(i)}</span></div><div class="date-label">${d}</div>${items.map(id=>getClient(id)).filter(Boolean).map(c=>`<div class="dayitem"><div><b>${esc(c.name)}</b><small>${esc(c.currentZone||c.zone||"Zona pendiente")}</small></div><button class="remove-button" onclick="removePlan('${d}','${c.id}')">×</button></div>`).join("")||`<div class="empty-day">Sin visitas asignadas</div>`}</div>`; }).join("")+`<p class="week-note"><b>Total: ${planCount()} / 23 visitas.</b> Propuesta orientativa por prioridad y zona registrada; todavía no calcula tiempos ni rutas por carretera.</p>`;
 }
 function addToPlan(id,date){const ds=currentWeekPlan(),i=ds.indexOf(date);if(i<0||!getClient(id))return false;if(ds.some(d=>(db.plan[d]||[]).includes(id)))return true;db.plan[date]||=[];if(db.plan[date].length>=dayCap(i)||planCount()>=23)return false;db.plan[date].push(id);return true;}
 function plan(id){const ds=currentWeekPlan(),date=ds.find((d,i)=>(db.plan[d]||[]).length<dayCap(i));if(!date){alert("El plan semanal ya está completo (23 visitas).");return;}if(!addToPlan(id,date)){alert("No se ha podido añadir la visita.");return;}save();tab("semana");}
@@ -54,5 +58,12 @@ $("#export").onclick=()=>download("clientes-control-visitas.json",JSON.stringify
 $("#add").onsubmit=e=>{e.preventDefault();const c=normalizeClient(Object.fromEntries(new FormData(e.target)));c.currentZone=c.zone;db.clients.push(c);e.target.reset();save();tab("cartera");};
 window.plan=plan;window.visit=visit;window.removePlan=removePlan;
 const versionNode=$("#app-version");if(versionNode)versionNode.textContent=`v${APP_VERSION}`;
+const savedTheme=localStorage.getItem("control_visitas_theme")||"dark";
+document.documentElement.dataset.theme=savedTheme;
+const themeButton=$("#theme-toggle");
+function updateThemeButton(){if(themeButton)themeButton.textContent=document.documentElement.dataset.theme==="dark"?"☀ Modo día":"☾ Modo noche";}
+updateThemeButton();
+if(themeButton)themeButton.onclick=()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;localStorage.setItem("control_visitas_theme",next);updateThemeButton();};
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 render();
+document.querySelector('nav button[data-tab="cartera"]')?.classList.add("active");

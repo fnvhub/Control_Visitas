@@ -1,11 +1,12 @@
 {
-  "version": "1.0.1",
+  "version": "1.1.0",
   "name": "Control_Visitas_MVP",
   "release_date": "2026-11-11",
   "changes": [
-    "Corregido el cálculo de atraso para clientes sin visitas registradas",
-    "Estado visible Sin visita registrada",
-    "Versión visible en la cabecera y pie de aplicación",
-    "Mantenidos los límites semanales y protección de datos manuales"
+    "Rediseño visual inspirado en paneles de productividad",
+    "Modo día y modo noche con preferencia guardada",
+    "Diseño adaptable a tablet, portátil y teléfono",
+    "Paneles en columnas y tarjetas con etiquetas visuales",
+    "Se mantienen las funciones de planificación y gestión de datos"
   ]
 }
