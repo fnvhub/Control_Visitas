@@ -1,13 +1,17 @@
 {
-  "version": "1.2.0",
-  "name": "Control_Visitas_MVP",
-  "release_date": "2026-11-11",
+  "version": "1.3.0",
+  "name": "Control_Visitas",
+  "release_date": "2026-11-12",
   "changes": [
-    "Apariencia Día, Noche y Según el sistema",
-    "Pestañas independientes Inicio, Cartera, Semana, Datos, Ajustes y Acerca de",
-    "Preferencia de apertura en Inicio o última pestaña",
-    "Prospecciones marcables como interesantes con prioridad comercial propia",
-    "Prioridad de prospección integrada en puntuación de propuestas",
-    "Historial de diez mejoras documentadas"
+    "Importación separada y conservadora del backup CRM 3.0.9 y del maestro Excel",
+    "Preservación del backup original completo (clientes, productos, ofertas, pedidos, historial, stock y configuración)",
+    "Registros de Excel no conciliados marcados como Revisar, sin inventar su condición de prospecto",
+    "Tablero de seguimiento con estados y fechas de recontacto",
+    "Registro de resultados de llamadas y respuestas habituales",
+    "Planificación semanal por corredor con propuesta de hasta 10 candidatos",
+    "Selección manual de visitas: la propuesta no agenda ni confirma automáticamente",
+    "Compromisos personales y profesionales con estado fijo, flexible o día completo",
+    "Objetivo semanal y preferencias configurables",
+    "Copia completa y exportación de cartera/seguimiento"
   ]
 }

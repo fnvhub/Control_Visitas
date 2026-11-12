@@ -1,86 +1,80 @@
-const APP_VERSION = "1.2.0";
-const $ = s => document.querySelector(s);
-const KEY = "control_visitas_mvp";
-const emptyDB = () => ({clients: [], visits: [], plan: {}});
-let db;
-try { db = JSON.parse(localStorage.getItem(KEY) || "null") || emptyDB(); }
-catch { db = emptyDB(); }
-db.clients ||= []; db.visits ||= []; db.plan ||= {};
-let current = null;
-
-const uid = () => Math.random().toString(36).slice(2,10);
-const today = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
-const clean = s => String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
-const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const weekDates = () => { const d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-((d.getDay()+6)%7)); return Array.from({length:5},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;}); };
-const weekdayNames=["Lunes","Martes","Miércoles","Jueves","Viernes"];
-const dayCap=i=>i===4?3:5;
-const getClient=id=>db.clients.find(c=>c.id===id);
-const planCount=()=>weekDates().reduce((n,d)=>n+(Array.isArray(db.plan[d])?db.plan[d].length:0),0);
-
-function normalizeClient(x) {
- return {id:x.id||uid(),name:x.name||x.nombre||x.cliente||[x.apellidos,x.nombre].filter(Boolean).join(" "),locality:x.locality||x.localidad||x.POB1||"",zone:x.currentZone||x.ubicacionActual||x.zone||x.zona||x.zonaVisita||"",currentZone:x.currentZone||x.ubicacionActual||x.zone||x.zona||x.zonaVisita||"",type:x.type||x.tipo||x.tipoVisita||"Farmacia",category:x.category||x.categoria||x.Visita||"B",frequency:Number(x.frequency||x.diasVisita||x.Dias)||0,lastVisit:x.lastVisit||x.ultimaVisita||x["Última visita"]||"",address:x.address||x.direccion||x.DIR1||"",nextVisit:x.nextVisit||x.proximaVisita||"",commercialPriority:x.commercialPriority||x.prioridadComercial||"",prospectInteresting:Boolean(x.prospectInteresting||x.prospeccionInteresante),notes:x.notes||x.notas||""};
+(()=>{
+"use strict";
+const KEY="cv_secretaria_v1",OLD="control_visitas_mvp",SEED="./datos_iniciales.json";
+const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random().toString(16).slice(2);
+const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const clean=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+const nameKey=s=>clean(s).replace(/[^a-z0-9 ]/g," ").split(/\\s+/).filter(Boolean).sort().join(" ");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const datePlus=(date,n)=>{const d=new Date((date||today())+"T12:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)};
+const monday=d=>{let x=new Date(d+"T12:00:00");x.setDate(x.getDate()-((x.getDay()+6)%7));return x.toISOString().slice(0,10)};
+const weekDays=start=>Array.from({length:5},(_,i)=>datePlus(start,i));
+const dayNames=["Lunes","Martes","Miércoles","Jueves","Viernes"];
+const empty=()=>({schema:1,contacts:[],logs:[],commitments:[],weeks:{},settings:{goal:23,fridayMax:3,wednesdayEnd:"13:30",theme:"system"},sources:{},legacy:{},createdAt:new Date().toISOString()});
+let db=load();
+function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&x.schema===1)return x;}catch{}return empty()}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll()}
+function week(){return db.weeks[$("#weekStart").value]||null}
+function weekObj(){let start=$("#weekStart").value;if(!db.weeks[start])db.weeks[start]={start,goal:db.settings.goal,corridor:"",selected:[],proposal:[]};return db.weeks[start]}
+function contact(id){return db.contacts.find(c=>c.id===id)}
+function latestLog(id){return db.logs.filter(x=>x.contactId===id).sort((a,b)=>b.at.localeCompare(a.at))[0]}
+function status(c){return c.status||"Por contactar"}
+function daysUntil(s){return s?Math.ceil((new Date(s+"T12:00:00")-new Date(today()+"T12:00:00"))/86400000):null}
+function nav(view){document.querySelectorAll(".view").forEach(x=>x.hidden=x.id!==view);document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.view===view));localStorage.setItem("cv_last_view",view);window.scrollTo({top:0,behavior:"smooth"})}
+document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>nav(b.dataset.view)));
+document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click",()=>b.closest("dialog").close()));
+function applyTheme(){const t=db.settings.theme||"system",dark=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.dataset.theme=dark?"dark":"light";$("#theme").value=t}
+function normalizeBackupClient(x){return {id:"crm-"+String(x.id||uid()),name:x.nombreComercial||x.nombreCompleto||"Sin nombre",person:x.nombreCompleto||"",businessName:x.nombreComercial||"",locality:x.localidad||"",zone:x.zonaVisita||x.localidad||"",address:x.direccion||"",postalCode:x.cp||"",province:x.provincia||"",phone:x.telefono||"",mobile:x.movil||"",email:x.email||"",specialty:x.especialidad||"",category:["A","B","C"].includes(String(x.tipoVisita||"").toUpperCase())?String(x.tipoVisita).toUpperCase():"B",frequency:Number(x.diasVisita)||0,referenceLastVisit:x.ultimaVisita||"",referenceLastOrder:x.ultimoPedido||"",notes:x.notas||"",kind:"CRM",status:"Por contactar",priority:"Normal",source:"backup-3.0.9"}}
+function normalizeMaestro(x){return {id:"xls-"+uid(),name:[x.APELLIDOS,x.NOMBRE].filter(Boolean).join(", "),locality:x.POB1||"",zone:x.POB1||"",address:x.DIR1||"",phone:x.TLF1||"",mobile:x.MOVIL||"",email:x.EMAIL||"",specialty:x.ESPECIALIDAD||"",category:["A","B","C"].includes(String(x.Tipo||"").toUpperCase())?String(x.Tipo).toUpperCase():"B",frequency:Number(x.Dias)||0,referenceLastVisit:x.Visita||"",referenceNextVisit:x.Proxi||"",notes:x.NOTAS||"",kind:"Revisar",status:"Por contactar",priority:"Normal",source:"maestro-excel",needsReview:true}}
+function addOrUpdate(c){const key=clean(c.name)+"|"+clean(c.locality);let old=db.contacts.find(x=>clean(x.name)+"|"+clean(x.locality)===key);if(old){const preserve={id:old.id,status:old.status,priority:old.priority,followDate:old.followDate,unavailableUntil:old.unavailableUntil,notes:old.notes||c.notes,kind:old.kind==="Candidato"?"Candidato":old.kind};Object.assign(old,c,preserve);return "updated"}db.contacts.push(c);return "added"}
+async function loadInitial(){if(db.sources.initialLoaded){$("#importStatus").textContent="Los archivos iniciales ya están incorporados. No se han duplicado.";return}
+const r=await fetch(SEED);if(!r.ok)throw Error("No se pudo leer datos_iniciales.json");const seed=await r.json();let a=0,u=0;
+for(const x of seed.crmBackup.clientes||[]){const k=addOrUpdate(normalizeBackupClient(x));k==="added"?a++:u++}
+let review=0;for(const x of seed.maestroMalaga||[]){const c=normalizeMaestro(x);const exists=db.contacts.find(y=>clean(y.locality)===clean(c.locality)&&(nameKey(y.name)===nameKey(c.name)||nameKey(y.person)===nameKey(c.name)||nameKey(y.businessName)===nameKey(c.name)));if(exists){exists.referenceLastVisit=exists.referenceLastVisit||c.referenceLastVisit;exists.referenceNextVisit=exists.referenceNextVisit||c.referenceNextVisit;exists.masterMatch=true;u++}else{db.contacts.push(c);review++}}
+db.legacy.crmBackup=seed.crmBackup;db.legacy.maestroMalaga=seed.maestroMalaga;db.sources={...db.sources,initialLoaded:true,backupVersion:seed.sourceInfo.appVersion,backupDate:seed.sourceInfo.fechaBackup,excelRows:seed.sourceInfo.excelRows};save();$("#importStatus").textContent=`Cargados ${a} clientes nuevos; ${u} coincidencias/actualizaciones; ${review} filas del Excel quedan como “Revisar”, sin convertirlas en prospectos ni visitas confirmadas.`}
+function dueScore(c){let n=0;if(c.followDate){const d=daysUntil(c.followDate);if(d!==null)n+=d<=0?100:Math.max(0,30-d)}if(c.priority==="Estratégica")n+=100;else if(c.priority==="Alta")n+=70;else if(c.priority==="Media")n+=35;if(c.category==="A")n+=15;const last=c.referenceLastVisit||"";if(last&&/^\d{4}-\d{2}-\d{2}$/.test(last)){const days=-daysUntil(last);if(days>60)n+=Math.min(40,Math.round(days/10))}return n}
+function eligible(c){return c.kind!=="Revisar"&&status(c)!=="Cita conseguida"&&(!c.unavailableUntil||c.unavailableUntil<=$("#weekStart").value)}
+function makeProposal(){const start=$("#weekStart").value,w=weekObj();w.corridor=$("#corridor").value.trim();w.goal=Number($("#weekGoal").value)||0;const pool=db.contacts.filter(eligible).filter(c=>!w.selected.includes(c.id)).filter(c=>!w.corridor||clean(c.zone+" "+c.locality).includes(clean(w.corridor))||clean(w.corridor).includes(clean(c.zone))).sort((a,b)=>dueScore(b)-dueScore(a));w.proposal=pool.slice(0,10).map(c=>c.id);save();nav("week")}
+function renderWeek(){const start=$("#weekStart").value,w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";$("#goalDisplay").textContent=`${w.goal??db.settings.goal} visitas`;
+const prop=(w.proposal||[]).map(contact).filter(Boolean),sel=(w.selected||[]).map(contact).filter(Boolean);
+$("#candidates").innerHTML=prop.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)} · ${esc(c.priority)} ${c.kind==="Revisar"?"· Revisar maestro":""}</small><small>${esc(c.notes||"")}</small></div><button data-select="${esc(c.id)}">Añadir</button></div>`).join("")||'<p class="muted">Elige un corredor y pulsa “Proponer”. Si no hay candidatos en esa zona, amplía el corredor.</p>';
+$("#selected").innerHTML=sel.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)}</small></div><button class="danger" data-unselect="${esc(c.id)}">Quitar</button></div>`).join("")||'<p class="muted">Todavía no has seleccionado visitas.</p>';
+$("#weekAlerts").innerHTML=conflicts(start).map(x=>`<div class="alert">Conflicto: ${esc(x.title)} el ${esc(x.date)} (${esc(x.start||"día completo")}–${esc(x.end||"")}). Se mantiene el compromiso y no se modifica ninguna cita.</div>`).join("");
+$("#candidates [data-select]").forEach(b=>b.onclick=()=>{const w=weekObj();if(!w.selected.includes(b.dataset.select))w.selected.push(b.dataset.select);w.proposal=w.proposal.filter(x=>x!==b.dataset.select);save()});
+$("#selected [data-unselect]").forEach(b=>b.onclick=()=>{const w=weekObj();w.selected=w.selected.filter(x=>x!==b.dataset.unselect);save()});
 }
-function save(){localStorage.setItem(KEY,JSON.stringify(db));render();}
-function lastVisit(c){return db.visits.filter(v=>v.idc===c.id).map(v=>v.date).sort().at(-1)||c.lastVisit||"";}
-function daysSince(date){if(!date)return null;const a=new Date(`${date}T12:00:00`),b=new Date(`${today()}T12:00:00`);return Math.floor((b-a)/86400000);}
-function overdueDays(c){const last=lastVisit(c);if(!last||!c.frequency)return null;return daysSince(last)-c.frequency;}
-function score(c){const cat=({A:100,B:60,C:30}[String(c.category).toUpperCase()]||30);const due=c.nextVisit&&c.nextVisit<=today()?120:0;const late=overdueDays(c);const overdue=late===null?0:Math.max(-20,Math.min(100,late));const p=clean(c.commercialPriority);const commercial=p.includes("estrategica")||p.includes("estratégica")?110:p.includes("alta")?100:p.includes("media")?55:p.includes("baja")?20:["alta","high","1"].includes(p)?80:p?20:0;return cat+due+overdue+commercial+(c.prospectInteresting?25:0);}
-function currentWeekPlan(){const ds=weekDates();ds.forEach(d=>{if(!Array.isArray(db.plan[d]))db.plan[d]=[];});return ds;}
-function tab(id,remember=true){
- const allowed=["home","cartera","semana","datos","ajustes","acerca"];
- if(!allowed.includes(id))id="home";
- document.querySelectorAll(".view").forEach(v=>v.hidden=v.id!==id);
- document.querySelectorAll(".section-nav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id));
- if(remember&&id!=="ajustes"&&id!=="acerca")localStorage.setItem("control_visitas_last_view",id);
- window.scrollTo({top:0,behavior:"smooth"});
-}
-function applyTheme(){
- const pref=localStorage.getItem("control_visitas_theme")||"system";
- const dark=pref==="dark"||(pref==="system"&&window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
- document.documentElement.dataset.theme=dark?"dark":"light";
- const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=dark?"#10111f":"#f2f4fa";
-}
-
-function render(){
- const dates=currentWeekPlan(),oldZone=$("#zone").value,zones=[...new Set(db.clients.map(c=>c.currentZone||c.zone).filter(Boolean))].sort();
- $("#zone").innerHTML='<option value="">Todas las zonas</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");$("#zone").value=zones.includes(oldZone)?oldZone:"";
- const z=$("#zone").value,type=$("#type").value,q=clean($("#search").value),overdue=db.clients.filter(c=>{const n=overdueDays(c);return n!==null&&n>0;}).length;
- $("#stats").innerHTML=`<span><b>${db.clients.length}</b><br><small>Registros</small></span><span><b>${overdue}</b><br><small>Atrasados</small></span><span><b>${planCount()}/23</b><br><small>Plan semanal</small></span>`;
- const rows=db.clients.filter(c=>(!z||(c.currentZone||c.zone)===z)&&(!type||c.type===type)&&(!q||clean(c.name+" "+c.locality+" "+(c.currentZone||c.zone)).includes(q))).sort((a,b)=>score(b)-score(a));
- $("#clients").innerHTML=rows.map(c=>{const late=overdueDays(c),status=!lastVisit(c)?"Sin visita registrada":!c.frequency?"Sin frecuencia":late>0?`<span class="late">Atraso ${late} días</span>`:"En plazo";return `<article class="client"><div class="client-main"><b>${esc(c.name)}</b><div class="tags"><span class="tag zone-tag">${esc(c.currentZone||c.zone||"Zona pendiente")}</span><span class="tag type-tag">${esc(c.type)}</span>${c.prospectInteresting?'<span class="tag prospect-tag">★ Interesante</span>':""}<span class="tag cat-${String(c.category).toLowerCase()}">Cat. ${esc(c.category)}</span></div><div class="meta">${esc(c.locality)} · ${status}${c.nextVisit?` · Próxima: ${esc(c.nextVisit)}`:""}</div></div><div class="client-actions">${c.type==="Prospección"?`<button class="button-soft" onclick="markInteresting('${c.id}')">${c.prospectInteresting?"★ Interesante":"☆ Me interesa"}</button>`:""}<button onclick="plan('${c.id}')">+ Plan</button><button class="button-soft" onclick="visit('${c.id}')">Visita</button></div></article>`;}).join("")||"No hay clientes.";
- $("#week").innerHTML=dates.map((d,i)=>{const items=db.plan[d]||[];return `<div class="weekday"><div class="weekday-head"><b>${weekdayNames[i]}</b><span class="day-count">${items.length}/${dayCap(i)}</span></div><div class="date-label">${d}</div>${items.map(id=>getClient(id)).filter(Boolean).map(c=>`<div class="dayitem"><div><b>${esc(c.name)}</b><small>${esc(c.currentZone||c.zone||"Zona pendiente")}</small></div><button class="remove-button" onclick="removePlan('${d}','${c.id}')">×</button></div>`).join("")||`<div class="empty-day">Sin visitas asignadas</div>`}</div>`; }).join("")+`<p class="week-note"><b>Total: ${planCount()} / 23 visitas.</b> Propuesta orientativa por prioridad y zona registrada; todavía no calcula tiempos ni rutas por carretera.</p>`;
-}
-function addToPlan(id,date){const ds=currentWeekPlan(),i=ds.indexOf(date);if(i<0||!getClient(id))return false;if(ds.some(d=>(db.plan[d]||[]).includes(id)))return true;db.plan[date]||=[];if(db.plan[date].length>=dayCap(i)||planCount()>=23)return false;db.plan[date].push(id);return true;}
-function plan(id){const ds=currentWeekPlan(),date=ds.find((d,i)=>(db.plan[d]||[]).length<dayCap(i));if(!date){alert("El plan semanal ya está completo (23 visitas).");return;}if(!addToPlan(id,date)){alert("No se ha podido añadir la visita.");return;}save();tab("semana");}
-function removePlan(date,id){db.plan[date]=(db.plan[date]||[]).filter(x=>x!==id);save();}
-function markInteresting(id){const c=getClient(id);if(!c||c.type!=="Prospección")return;c.prospectInteresting=!c.prospectInteresting;c.commercialPriority=c.prospectInteresting?"Prospección alta":"";save();}
-function propose(){
- const ds=currentWeekPlan(),already=new Set(ds.flatMap(d=>db.plan[d]||[]));let candidates=db.clients.filter(c=>!already.has(c.id)).sort((a,b)=>score(b)-score(a));
- for(let i=0;i<ds.length;i++){const d=ds[i],capacity=dayCap(i)-(db.plan[d]||[]).length;for(let n=0;n<capacity&&candidates.length;n++){let ix=0;if(n>0){const anchor=getClient(db.plan[d][0]),zone=anchor&&(anchor.currentZone||anchor.zone);const same=candidates.findIndex(c=>(c.currentZone||c.zone)&&((c.currentZone||c.zone)===zone));if(same>0)ix=same;}const [c]=candidates.splice(ix,1);db.plan[d].push(c.id);}}
- save();tab("semana");
-}
-function visit(id){current=id;const c=getClient(id);$("#visitname").textContent=c?.name||"";$("#visitdate").value=today();$("#note").value="";$("#next").value="";$("#visit").showModal();}
-$("#visitform").onsubmit=e=>{if(e.submitter?.id!=="savevisit")return;e.preventDefault();db.visits.push({idc:current,date:$("#visitdate").value,note:$("#note").value});const nx=$("#next").value,c=getClient(current);if(c&&nx)c.nextVisit=nx;Object.keys(db.plan).forEach(d=>db.plan[d]=db.plan[d].filter(x=>x!==current));$("#visit").close();save();};
-document.querySelectorAll(".section-nav button").forEach(b=>b.onclick=()=>tab(b.dataset.tab));$("#zone").onchange=render;$("#type").onchange=render;$("#search").oninput=render;$("#propose").onclick=propose;
-$("#file").onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const v=JSON.parse(await file.text()),arr=Array.isArray(v)?v:v.clients||v.clientes||v.data||[];if(!Array.isArray(arr))throw new Error("El JSON no contiene una lista de clientes.");let a=0,u=0;arr.forEach(raw=>{const incoming=normalizeClient(raw);if(!incoming.name)return;const old=db.clients.find(c=>clean(c.name)===clean(incoming.name)&&(!c.locality||!incoming.locality||clean(c.locality)===clean(incoming.locality)));if(!old){db.clients.push(incoming);a++;return;}const keep={id:old.id,currentZone:old.currentZone||old.zone,nextVisit:old.nextVisit,commercialPriority:old.commercialPriority,notes:old.notes,frequency:old.frequency,category:old.category,type:old.type,locality:old.locality,address:old.address};Object.assign(old,incoming,keep);u++;});$("#message").textContent=`Importación completada: ${a} nuevos, ${u} actualizados. Se han conservado los datos manuales.`;save();}catch(err){$("#message").textContent="Error al importar: "+err.message;}e.target.value="";};
-function download(name,data){const url=URL.createObjectURL(new Blob([data],{type:"application/json"})),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-$("#export").onclick=()=>download("clientes-control-visitas.json",JSON.stringify(db.clients,null,2));$("#backup").onclick=()=>download("copia-completa-control-visitas.json",JSON.stringify(db,null,2));
-$("#add").onsubmit=e=>{e.preventDefault();const raw=Object.fromEntries(new FormData(e.target));const c=normalizeClient(raw);c.currentZone=c.zone;if(c.type==="Prospección"&&String(c.commercialPriority).toLowerCase().includes("alta"))c.prospectInteresting=true;db.clients.push(c);e.target.reset();save();tab("cartera");};
-window.plan=plan;window.visit=visit;window.removePlan=removePlan;window.markInteresting=markInteresting;
-const versionNode=$("#app-version");if(versionNode)versionNode.textContent=`v${APP_VERSION}`;
-$("#about-version").textContent=APP_VERSION;
-const themeSetting=$("#theme-setting"),startupSetting=$("#startup-setting");
-themeSetting.value=localStorage.getItem("control_visitas_theme")||"system";
-startupSetting.value=localStorage.getItem("control_visitas_startup")||"home";
-themeSetting.onchange=()=>{localStorage.setItem("control_visitas_theme",themeSetting.value);applyTheme();};
-startupSetting.onchange=()=>localStorage.setItem("control_visitas_startup",startupSetting.value);
-$("#theme-toggle").onclick=()=>tab("ajustes");
-applyTheme();
-if(window.matchMedia)window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if((localStorage.getItem("control_visitas_theme")||"system")==="system")applyTheme();});
-$("#backup-data").onclick=$("#backup").onclick;
+function conflicts(start){const dates=weekDays(start),w=db.weeks[start];return db.commitments.filter(c=>dates.includes(c.date)&&c.flex!=="flexible"&&(c.flex==="allday"||(c.start&&c.end))).filter(c=>w&&w.selected.length).map(c=>({...c}))}
+function renderFollow(){const q=clean($("#followSearch").value),f=$("#followFilter").value;const arr=db.contacts.filter(c=>c.kind!=="Revisar"&&(!f||status(c)===f)&&(!q||clean(c.name+" "+c.locality).includes(q))).sort((a,b)=>(a.followDate||"9999").localeCompare(b.followDate||"9999"));const statuses=["Por contactar","Contactado","Esperando respuesta","Seguimiento programado","Cita conseguida"];
+$("#followBoard").innerHTML=statuses.map(s=>`<section class="lane"><h3>${s} <small>${arr.filter(c=>status(c)===s).length}</small></h3>${arr.filter(c=>status(c)===s).map(c=>`<div class="follow-card"><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.channel||"Sin canal")}</small><small>${c.followDate?"Volver a contactar: "+esc(c.followDate):""}</small><p>${esc(c.notes||"")}</p><div class="actions"><button data-log="${esc(c.id)}">Registrar contacto</button><button class="secondary" data-edit="${esc(c.id)}">Editar</button></div></div>`).join("")||'<p class="muted small">Sin contactos</p>'}</section>`).join("");
+$("#followBoard [data-log]").forEach(b=>b.onclick=()=>openLog(b.dataset.log));$("#followBoard [data-edit]").forEach(b=>b.onclick=()=>openContact(b.dataset.edit))}
+function renderClients(){const q=clean($("#clientSearch").value),kind=$("#clientKind").value,p=$("#clientPriority").value;const arr=db.contacts.filter(c=>(!kind||c.kind===kind)&&(!p||c.priority===p)&&(!q||clean(c.name+" "+c.locality+" "+c.zone+" "+c.address).includes(q))).sort((a,b)=>dueScore(b)-dueScore(a));$("#clientList").innerHTML=arr.slice(0,500).map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.kind)} · ${esc(c.locality)} · ${esc(c.zone)} · Categoría ${esc(c.category||"—")} · Prioridad ${esc(c.priority||"Normal")}</small><small>${esc(c.address||"")}</small>${c.needsReview?'<small class="warning">Origen Excel: requiere revisar clasificación antes de proponer.</small>':""}</div><div class="actions"><button class="secondary" data-edit="${esc(c.id)}">Editar</button><button data-log="${esc(c.id)}">Contacto</button></div></div>`).join("")||'<p class="muted">No hay resultados.</p>';$("#clientList [data-edit]").forEach(b=>b.onclick=()=>openContact(b.dataset.edit));$("#clientList [data-log]").forEach(b=>b.onclick=()=>openLog(b.dataset.log))}
+function renderCommitments(){const arr=db.commitments.slice().sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));$("#commitmentList").innerHTML=arr.map(c=>`<div class="item"><div><b>${esc(c.title)}</b><small>${esc(c.date)} · ${esc(c.start||"Todo el día")} ${c.end?"– "+esc(c.end):""} · ${esc(c.type)} · ${c.flex==="fixed"?"Fijo":c.flex==="flexible"?"Flexible":"Día completo"}</small><small>${esc(c.location||"")}</small></div><button class="danger" data-delcommit="${esc(c.id)}">Eliminar</button></div>`).join("")||'<p class="muted">No hay compromisos registrados.</p>';$("#commitmentList [data-delcommit]").forEach(b=>b.onclick=()=>{db.commitments=db.commitments.filter(c=>c.id!==b.dataset.delcommit);save()})}
+function renderHome(){const follow=db.contacts.filter(c=>c.followDate&&c.followDate<=datePlus(today(),7)&&status(c)!=="Cita conseguida").sort((a,b)=>a.followDate.localeCompare(b.followDate)).slice(0,6);$("#homeFollow").innerHTML=follow.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.followDate)} · ${esc(status(c))}</small></div><button class="secondary" data-log="${esc(c.id)}">Actualizar</button></div>`).join("")||'<p class="muted">No hay seguimientos próximos.</p>';$("#homeFollow [data-log]").forEach(b=>b.onclick=()=>openLog(b.dataset.log));
+const start=$("#weekStart").value,w=db.weeks[start];$("#homeWeek").innerHTML=w&&w.selected.length?`<p><b>${w.selected.length} visitas seleccionadas</b> para la semana del ${esc(start)}.</p>`:'<p class="muted">Aún no has preparado esta semana.</p>';
+const next=db.commitments.filter(c=>c.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);$("#homeCommitments").innerHTML=next.map(c=>`<div class="item"><div><b>${esc(c.title)}</b><small>${esc(c.date)} · ${esc(c.start||"Todo el día")} · ${esc(c.type)}</small></div></div>`).join("")||'<p class="muted">No hay compromisos futuros.</p>';
+const due=db.contacts.filter(c=>c.followDate&&c.followDate<=today()&&status(c)!=="Cita conseguida").length;$("#stats").innerHTML=`<div class="stat"><b>${db.contacts.filter(c=>c.kind==="CRM").length}</b><small>Clientes CRM</small></div><div class="stat"><b>${db.contacts.filter(c=>c.kind==="Candidato").length}</b><small>Candidatos</small></div><div class="stat"><b>${due}</b><small>Seguimientos vencidos</small></div><div class="stat"><b>${db.commitments.filter(c=>c.date>=today()).length}</b><small>Compromisos futuros</small></div>`}
+function renderAll(){applyTheme();renderHome();renderWeek();renderFollow();renderClients();renderCommitments();$("#goalDisplay").textContent=`${weekObj().goal??db.settings.goal} visitas`}
+function openContact(id){const c=id?contact(id):null,form=$("#contactForm");form.reset();form.elements.id.value=c?.id||"";for(const k of ["name","locality","zone","address","kind","category","priority","status","followDate","unavailableUntil","channel","notes"])if(c&&form.elements[k])form.elements[k].value=c[k]??(k==="kind"?"Candidato":k==="category"?"B":k==="priority"?"Normal":k==="status"?"Por contactar":"");$("#contactTitle").textContent=c?"Editar contacto":"Nuevo contacto";$("#contactDialog").showModal()}
+$("#contactForm").onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),id=f.id||uid(),old=contact(id),c={...old,...f,id,followDate:f.followDate||"",unavailableUntil:f.unavailableUntil||""};delete c.id;const final={...c,id};if(old)Object.assign(old,final);else db.contacts.push(final);$("#contactDialog").close();save()};
+function openLog(id){const f=$("#logForm");f.reset();f.elements.id.value=id;$("#contactLog").showModal()}
+$("#logForm").onsubmit=e=>{e.preventDefault();const f=Object.fromEntries(new FormData(e.target)),c=contact(f.id);if(!c)return;const result=f.result;let nextStatus="Contactado",follow=f.followDate||"";if(result==="no-answer"){nextStatus="Seguimiento programado";follow=follow||datePlus(today(),2)}if(result==="call-later"){nextStatus="Seguimiento programado";follow=follow||datePlus(today(),1)}if(result==="next-week"){nextStatus="Seguimiento programado";follow=follow||datePlus(today(),7)}if(result==="not-available"){nextStatus="Seguimiento programado";follow=follow||datePlus(today(),14);c.unavailableUntil=follow}if(result==="waiting")nextStatus="Esperando respuesta";if(result==="confirmed"){if(!f.appointmentDate){alert("Indica fecha de la cita confirmada.");return}nextStatus="Cita conseguida";db.commitments.push({id:uid(),title:"Cita: "+c.name,date:f.appointmentDate,start:f.start,end:f.end,type:"Visita comercial",flex:"fixed",contactId:c.id,createdAt:new Date().toISOString()})}if(result==="walkin")nextStatus="Contactado";c.status=nextStatus;c.followDate=follow;c.channel=c.channel||"Llamada";db.logs.push({id:uid(),contactId:c.id,at:new Date().toISOString(),result,notes:f.notes||"",followDate:follow,appointmentDate:f.appointmentDate||""});$("#contactLog").close();save()};
+function addCommit(){const f=$("#commitForm");f.reset();f.elements.date.value=$("#weekStart").value;$("#commitDialog").showModal()}
+$("#commitForm").onsubmit=e=>{e.preventDefault();const c=Object.fromEntries(new FormData(e.target));if(c.start&&c.end&&c.end<=c.start){alert("La hora final debe ser posterior a la inicial.");return}db.commitments.push({...c,id:uid(),createdAt:new Date().toISOString()});$("#commitDialog").close();save()};
+function exportJson(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function migrateOld(){try{const old=JSON.parse(localStorage.getItem(OLD)||"null");if(old&&Array.isArray(old.clients)){for(const x of old.clients){const c={id:x.id||uid(),name:x.name||"",locality:x.locality||"",zone:x.currentZone||x.zone||"",address:x.address||"",kind:"CRM",category:x.category||"B",priority:x.commercialPriority||"Normal",status:"Por contactar",notes:x.notes||"",referenceLastVisit:x.lastVisit||"",frequency:x.frequency||0};if(c.name)addOrUpdate(c)}db.legacy.previousMvp=old;db.sources.migratedFrom="control_visitas_mvp";save()}}catch{}}
+$("#makeProposal").onclick=makeProposal;$("#weekStart").onchange=()=>{const w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";renderWeek()};$("#weekGoal").onchange=()=>{weekObj().goal=Number($("#weekGoal").value)||0;save()};$("#corridor").onchange=()=>{weekObj().corridor=$("#corridor").value;save()};
+$("#addContact").onclick=()=>openContact();$("#newProspect").onclick=()=>{openContact();$("#contactForm").elements.kind.value="Candidato"};$("#addCommitment").onclick=addCommit;
+$("#clientSearch").oninput=renderClients;$("#clientKind").onchange=renderClients;$("#clientPriority").onchange=renderClients;$("#followSearch").oninput=renderFollow;$("#followFilter").onchange=renderFollow;
+$("#saveSettings").onclick=()=>{db.settings.goal=Number($("#defaultGoal").value)||0;db.settings.fridayMax=Number($("#fridayMax").value)||0;db.settings.wednesdayEnd=$("#wednesdayEnd").value;db.settings.theme=$("#theme").value;save();alert("Ajustes guardados.")};
+$("#themeBtn").onclick=()=>nav("settings");
+$("#backupBtn").onclick=()=>exportJson("Control_Visitas_copia_completa.json",db);
+$("#exportAll").onclick=()=>exportJson("Control_Visitas_copia_completa.json",db);
+$("#exportCRM").onclick=()=>exportJson("Control_Visitas_cartera_seguimiento.json",{contacts:db.contacts,logs:db.logs,commitments:db.commitments,weeks:db.weeks,settings:db.settings});
+$("#loadInitial").onclick=()=>loadInitial().catch(e=>$("#importStatus").textContent=e.message);
+$("#importFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const x=JSON.parse(await file.text());if(x.schema===1){if(!confirm("¿Reemplazar los datos actuales con esta copia? Descarga antes una copia de seguridad."))return;db=x;save();$("#importStatus").textContent="Copia restaurada."}else if(Array.isArray(x.clientes)){db.legacy.externalBackup=x;let n=0;for(const raw of x.clientes){addOrUpdate(normalizeBackupClient(raw));n++}save();$("#importStatus").textContent=`Importados ${n} registros CRM. El backup original completo queda conservado en el historial de fuentes.`}else throw Error("Formato no reconocido")}catch(err){$("#importStatus").textContent="No se importó: "+err.message}e.target.value=""};
+$("#defaultGoal").value=db.settings.goal;$("#fridayMax").value=db.settings.fridayMax;$("#wednesdayEnd").value=db.settings.wednesdayEnd;$("#weekStart").value=monday(today());$("#weekGoal").value=db.settings.goal;
+if(!db.sources.migratedFrom)migrateOld();
+applyTheme();if(matchMedia)matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",()=>{if(db.settings.theme==="system")applyTheme()});
+renderAll();nav(localStorage.getItem("cv_last_view")||"home");
 if("serviceWorker"in navigator)addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-render();
-const startup=localStorage.getItem("control_visitas_startup")||"home";
-const lastView=localStorage.getItem("control_visitas_last_view")||"home";
-tab(startup==="last"?lastView:"home",false);
+})();
