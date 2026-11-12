@@ -128,7 +128,7 @@ w.proposal=ranked.slice(0,10).map(c=>c.id);save();nav("week");
 }
 function renderWeek(){const start=$("#weekStart").value,w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";$("#goalDisplay").textContent=`${w.goal??db.settings.goal} visitas`;
 const prop=(w.proposal||[]).map(contact).filter(Boolean),sel=(w.selected||[]).map(contact).filter(Boolean);
-$("#candidates").innerHTML=prop.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)} · ${esc(c.priority)} ${c.kind==="Revisar"?"· Revisar maestro":""}</small><small>Última visita: ${esc(c.referenceLastVisit||"Sin fecha")} · Próxima: ${esc(calculatedNextVisit(c)||"Sin fecha")} · Frecuencia: ${Number(c.frequency)||"Sin dato"} días</small><div class="inline-edit"><label>Última visita <input type="date" data-lastvisit="${esc(c.id)}" value="${esc(c.referenceLastVisit||"")}"></label><label>Próxima visita <input type="date" data-nextvisit="${esc(c.id)}" value="${esc(c.referenceNextVisit||"")}"></label><label>Cada (días) <input type="number" min="1" max="730" data-frequency="${esc(c.id)}" value="${esc(c.frequency||"")}"></label><button class="secondary" data-savecandidate="${esc(c.id)}">Guardar datos</button></div><small>${esc(c.notes||"")}</small></div><div class="actions"><button data-select="${esc(c.id)}">Añadir</button><button class="secondary" data-defer="${esc(c.id)}">Aplazar para próxima vez</button><button class="danger" data-fridge="${esc(c.id)}">Nevera</button></div></div>`).join("")||'<p class="muted">Elige un corredor y pulsa “Proponer”. Si no hay candidatos en esa zona, amplía el corredor.</p>';
+$("#candidates").innerHTML=prop.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)} · ${esc(c.priority)} ${c.kind==="Revisar"?"· Revisar maestro":""}</small><small>Última visita: ${esc(c.referenceLastVisit||"Sin fecha")} · Próxima: ${esc(calculatedNextVisit(c)||"Sin fecha")} · Frecuencia: ${Number(c.frequency)||"Sin dato"} días</small><div class="inline-edit"><label>Última visita <input type="date" data-lastvisit="${esc(c.id)}" value="${esc(c.referenceLastVisit||"")}"></label><label>Próxima visita <input type="date" data-nextvisit="${esc(c.id)}" value="${esc(c.referenceNextVisit||"")}"></label><label>Cada (días) <input type="number" min="1" max="730" data-frequency="${esc(c.id)}" value="${esc(c.frequency||"")}"></label><button class="secondary" data-savecandidate="${esc(c.id)}">Guardar datos</button></div><small>${esc(c.notes||"")}</small></div><div class="actions"><button data-select="${esc(c.id)}">Añadir</button><button class="secondary" data-defer="${esc(c.id)}">Aplazar</button><button class="secondary" data-defer-options="${esc(c.id)}">Opciones</button><button class="danger" data-fridge="${esc(c.id)}">Nevera</button></div></div>`).join("")||'<p class="muted">Elige un corredor y pulsa “Proponer”. Si no hay candidatos en esa zona, amplía el corredor.</p>';
 $("#selected").innerHTML=sel.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)}</small></div><button class="danger" data-unselect="${esc(c.id)}">Quitar</button></div>`).join("")||'<p class="muted">Todavía no has seleccionado visitas.</p>';
 $("#weekAlerts").innerHTML=conflicts(start).map(x=>`<div class="alert">Conflicto: ${esc(x.title)} el ${esc(x.date)} (${esc(x.start||"día completo")}–${esc(x.end||"")}). Se mantiene el compromiso y no se modifica ninguna cita.</div>`).join("");
 $$("#candidates [data-savecandidate]").forEach(b=>b.onclick=()=>{
@@ -144,10 +144,17 @@ save();
 $$("#candidates [data-select]").forEach(b=>b.onclick=()=>{const w=weekObj();if(!w.selected.includes(b.dataset.select))w.selected.push(b.dataset.select);w.proposal=w.proposal.filter(x=>x!==b.dataset.select);save()});
 $$("#candidates [data-defer]").forEach(b=>b.onclick=()=>{
 const c=contact(b.dataset.defer);if(!c)return;
-const choice=prompt("¿Cuándo quieres que vuelva a aparecer?\\n1. La próxima semana\\n2. Dentro de 2 semanas\\n3. Dentro de un mes\\n4. Elegir fecha");
+// Acción rápida: aplaza sin preguntas hasta la próxima semana.
+c.recommendationState="deferred";c.deferredUntil=datePlus($("#weekStart").value,7);c.recommendationUpdatedAt=new Date().toISOString();
+const w=weekObj();w.proposal=w.proposal.filter(x=>x!==c.id);save();
+});
+$$("#candidates [data-defer-options]").forEach(b=>b.onclick=()=>{
+const c=contact(b.dataset.deferOptions);if(!c)return;
+const choice=prompt("Opciones de aplazamiento:\\n1. Dentro de 2 semanas\\n2. Dentro de un mes\\n3. Elegir fecha");
 if(choice===null)return;
-let d=choice==="1"?datePlus($("#weekStart").value,7):choice==="2"?datePlus($("#weekStart").value,14):choice==="3"?datePlus($("#weekStart").value,30):choice==="4"?prompt("Introduce la fecha (AAAA-MM-DD):"):"";
-if(!d||!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)){alert("Fecha no válida. No se ha aplazado.");return}
+let d=choice==="1"?datePlus($("#weekStart").value,14):choice==="2"?datePlus($("#weekStart").value,30):choice==="3"?prompt("Fecha de reaparición (AAAA-MM-DD):"):"";
+if(!d||!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)){alert("Fecha no válida. No se ha cambiado el aplazamiento.");return}
+if(new Date(d+"T00:00:00")<new Date($("#weekStart").value+"T00:00:00")){alert("La fecha debe ser igual o posterior al inicio de la semana.");return}
 c.recommendationState="deferred";c.deferredUntil=d;c.recommendationUpdatedAt=new Date().toISOString();
 const w=weekObj();w.proposal=w.proposal.filter(x=>x!==c.id);save();
 });

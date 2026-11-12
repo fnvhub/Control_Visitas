@@ -1,5 +1,5 @@
 {
-  "version": "1.3.6",
+  "version": "1.3.7",
   "name": "Control_Visitas",
   "release_date": "2026-11-12",
   "changes": [
@@ -8,6 +8,7 @@
     "Frecuencia Dias aplicada al cálculo de próxima visita cuando no hay fecha Proxi",
     "Respeto de clasificación NEVERA del maestro y exclusión de recomendaciones",
     "Los datos editados manualmente de última visita se conservan durante la actualización del maestro",
-    "Distintivo de versión de cabecera actualizado"
+    "Distintivo de versión de cabecera actualizado",
+    "Aplazar retira inmediatamente el candidato y lo programa para la semana siguiente, sin diálogos; las fechas alternativas quedan en Opciones"
   ]
 }

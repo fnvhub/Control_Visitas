@@ -27,3 +27,8 @@ Abre Ajustes / Datos y pulsa **Cargar datos aportados en esta conversación**. S
 
 ## Seguridad de datos
 Haz una copia completa antes de importar o actualizar. La carga inicial no se ejecuta automáticamente: el usuario la inicia desde Ajustes / Datos.
+
+
+### 1.3.7
+- Aplazar retira inmediatamente el candidato y lo programa para la semana siguiente, sin diálogos.
+- Las alternativas (2 semanas, 1 mes o fecha concreta) están en el botón opcional «Opciones».
