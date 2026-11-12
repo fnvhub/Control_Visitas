@@ -1,8 +1,14 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.2",
   "name": "Control_Visitas",
   "release_date": "2026-11-12",
   "changes": [
+    "Corrección del error de renderizado: uso de selectores de colección para iterar botones y elementos",
+    "Panel Acerca de con versión visible en la aplicación",
+    "Caché del service worker renovada para forzar la actualización",
+    "Corrección del error de renderizado: uso de selectores de colección para iterar botones y elementos",
+    "Panel Acerca de con versión visible en la aplicación",
+    "Caché del service worker renovada para forzar la actualización",
     "Corrección de importación: validación de estructuras, normalización de datos locales y manejo seguro de listas nulas",
     "Importación separada y conservadora del backup CRM 3.0.9 y del maestro Excel",
     "Preservación del backup original completo (clientes, productos, ofertas, pedidos, historial, stock y configuración)",

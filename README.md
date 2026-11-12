@@ -1,7 +1,7 @@
-# Control_Visitas 1.3.1 — Secretaria comercial
+# Control_Visitas 1.3.2 — Secretaria comercial
 
 ## Instalación
-Sube el contenido de este ZIP a la raíz de la rama `Control_Visitas_MVP` sustituyendo `index.html`, `app.js`, `styles.css`, `manifest.webmanifest` y `sw.js`. Añade `datos_iniciales.json` y `version.json`. No borres iconos ni archivos ajenos a esta versión.
+Sube el contenido de este ZIP a la raíz de la rama `Control_Visitas_MVP` sustituyendo `index.html`, `app.js`, `styles.css`, `manifest.webmanifest`, `sw.js` y `version.json`. Añade `datos_iniciales.json` y `version.json`. No borres iconos ni archivos ajenos a esta versión.
 
 ## Actualización
 Sustituye los archivos de la versión anterior por los de esta versión. Conserva `datos_iniciales.json` junto a `index.html`. La caché del service worker se renueva automáticamente. Los datos guardados en el navegador se normalizan sin eliminar contactos, seguimientos ni compromisos.
