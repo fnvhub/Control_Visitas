@@ -1,7 +1,10 @@
-# Control_Visitas 1.3.0 — Secretaria comercial
+# Control_Visitas 1.3.1 — Secretaria comercial
 
 ## Instalación
 Sube el contenido de este ZIP a la raíz de la rama `Control_Visitas_MVP` sustituyendo `index.html`, `app.js`, `styles.css`, `manifest.webmanifest` y `sw.js`. Añade `datos_iniciales.json` y `version.json`. No borres iconos ni archivos ajenos a esta versión.
+
+## Actualización
+Sustituye los archivos de la versión anterior por los de esta versión. Conserva `datos_iniciales.json` junto a `index.html`. La caché del service worker se renueva automáticamente. Los datos guardados en el navegador se normalizan sin eliminar contactos, seguimientos ni compromisos.
 
 ## Primera ejecución
 Abre Ajustes / Datos y pulsa **Cargar datos aportados en esta conversación**. Se incorporan el backup CRM 3.0.9 y las 295 filas de la hoja Malaga como fuentes diferenciadas. El backup completo se conserva dentro de los datos locales. Las filas Excel que no se han podido conciliar quedan como **Revisar**; no se clasifican automáticamente como clientes o prospectos.
