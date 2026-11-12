@@ -1,13 +1,13 @@
 {
-  "version": "1.3.5",
+  "version": "1.3.6",
   "name": "Control_Visitas",
   "release_date": "2026-11-12",
   "changes": [
-    "Corrección de ubicación actual desde maestro: localidad, dirección, código postal y provincia",
-    "Edición de última visita, próxima visita y frecuencia desde ficha y propuesta",
-    "Se muestra la frecuencia de visita en cartera y candidatos",
-    "Aplazar permite elegir fecha de nueva propuesta y el candidato queda fuera hasta esa fecha",
-    "Nevera solicita motivo y mantiene exclusión hasta reactivación manual",
-    "Actualización del distintivo de versión en cabecera"
+    "Importación del campo Última visita de la columna P; si está vacío, se usa Visita como referencia histórica",
+    "Actualización de localidad, dirección, código postal y provincia desde el maestro",
+    "Frecuencia Dias aplicada al cálculo de próxima visita cuando no hay fecha Proxi",
+    "Respeto de clasificación NEVERA del maestro y exclusión de recomendaciones",
+    "Los datos editados manualmente de última visita se conservan durante la actualización del maestro",
+    "Distintivo de versión de cabecera actualizado"
   ]
 }
