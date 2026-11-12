@@ -1,14 +1,11 @@
 {
-  "version": "1.3.3",
+  "version": "1.3.4",
   "name": "Control_Visitas",
   "release_date": "2026-11-12",
   "changes": [
-    "Incorpora Visita y Proxi del maestro Excel como fechas de última y próxima visita",
-    "Cruce por nombre normalizado sin exigir coincidencia literal de localidad",
-    "Catálogo de corredores extraído de zonaVisita del backup CRM",
-    "Selector de corredor con opción de añadir zonas",
-    "La secretaria propone automáticamente la zona con mayor necesidad comercial y candidatos priorizados",
-    "Muestra última visita y próxima visita en las propuestas",
-    "Cruce de 573 eventos de agenda; 82 clientes enlazados por coincidencia exacta y guardados como última cita programada, sin marcarlos como visita realizada"
+    "Acciones por candidato: Añadir, Aplazar para próxima vez y Nevera",
+    "Nevera excluye persistentemente al cliente de recomendaciones hasta reactivación manual desde Cartera",
+    "Aplazar lo retira de la propuesta actual y vuelve a permitirlo en el siguiente ciclo de propuestas",
+    "Se muestra el estado Nevera en la cartera y se añade Activar nuevamente"
   ]
 }
