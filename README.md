@@ -28,7 +28,9 @@ Abre Ajustes / Datos y pulsa **Cargar datos aportados en esta conversación**. S
 ## Seguridad de datos
 Haz una copia completa antes de importar o actualizar. La carga inicial no se ejecuta automáticamente: el usuario la inicia desde Ajustes / Datos.
 
-
-### 1.3.7
-- Aplazar retira inmediatamente el candidato y lo programa para la semana siguiente, sin diálogos.
-- Las alternativas (2 semanas, 1 mes o fecha concreta) están en el botón opcional «Opciones».
+### 1.3.8
+- Aplazar ya no abre ventanas emergentes. La acción rápida aplaza una semana.
+- Otras fechas se configuran de forma opcional dentro de cada candidato.
+- Nevera no abre prompts; el motivo es opcional y se introduce solo si se despliega.
+- Se puede volver a seleccionar «Que recomiende la secretaria».
+- La recomendación geográfica prioriza la localidad actual frente a zonas antiguas del CRM.

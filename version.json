@@ -1,5 +1,5 @@
 {
-  "version": "1.3.7",
+  "version": "1.3.8",
   "name": "Control_Visitas",
   "release_date": "2026-11-12",
   "changes": [
@@ -9,6 +9,10 @@
     "Respeto de clasificación NEVERA del maestro y exclusión de recomendaciones",
     "Los datos editados manualmente de última visita se conservan durante la actualización del maestro",
     "Distintivo de versión de cabecera actualizado",
-    "Aplazar retira inmediatamente el candidato y lo programa para la semana siguiente, sin diálogos; las fechas alternativas quedan en Opciones"
+    "Aplazar retira inmediatamente el candidato y lo programa para la semana siguiente, sin diálogos; las fechas alternativas quedan en Opciones",
+    "Aplazamiento rápido sin preguntas; fechas alternativas mediante controles desplegables en la propia propuesta.",
+    "Nevera sin ventanas emergentes; motivo opcional dentro de la propuesta.",
+    "Selector explícito Que recomiende la secretaria para volver al modo automático.",
+    "La agrupación geográfica usa la localidad actual y no la zona antigua del CRM."
   ]
 }

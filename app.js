@@ -109,8 +109,7 @@ save();
 function reactivateContact(id){const c=contact(id);if(!c)return;c.recommendationState="active";c.recommendationUpdatedAt=new Date().toISOString();save()}
 
 function inferZone(c){
-const z=String(c.zone||"").trim();if(z)return z;
-const town=clean(c.locality);
+const town=clean(c.locality||c.currentAddress||"");
 const map=[["marbella","Marbella"],["san pedro","San Pedro"],["estepona","Estepona"],["fuengirola","Fuengirola"],["mijas","Fuengirola"],["benalmadena","Arroyo-Torremolinos"],["torremolinos","Arroyo-Torremolinos"],["malaga","Málaga"],["rincon","Rincón de la Victoria"],["velez","Vélez-Nerja"],["nerja","Vélez-Nerja"],["coin","Alhaurín-Coín-Guaro"],["alhaurin","Alhaurín-Coín-Guaro"],["guaro","Alhaurín-Coín-Guaro"],["pizarra","Alhaurín-Coín-Guaro"],["cadiz","Cádiz"],["san fernando","Cádiz"],["chiclana","Chiclana"],["conil","Conil"],["jerez","Jerez"],["algeciras","Campo de Gibraltar"],["la linea","Campo de Gibraltar"],["tarifa","Campo de Gibraltar"],["ronda","Ronda-Antequera"],["antequera","Ronda-Antequera"]];
 const hit=map.find(([k])=>town.includes(k));return hit?hit[1]:"";
 }
@@ -121,14 +120,16 @@ return [...scores.entries()].sort((a,b)=>(b[1].score+b[1].count*12)-(a[1].score+
 function makeProposal(){
 const start=$("#weekStart").value,w=weekObj();w.goal=Number($("#weekGoal").value)||0;
 const pool=db.contacts.filter(eligible).filter(c=>!w.selected.includes(c.id));
-const selectedZone=$("#corridor").value.trim()||chooseBestZone(pool);w.corridor=selectedZone;
+const mode=$("#corridor").value;
+const selectedZone=mode==="__auto__"||!mode?chooseBestZone(pool):mode;
+w.zoneMode=mode==="__auto__"||!mode?"auto":"manual";w.corridor=selectedZone;
 const zoned=pool.filter(c=>inferZone(c)===selectedZone||clean(c.zone)===clean(selectedZone)||clean(c.locality)===clean(selectedZone));
 const ranked=(zoned.length?zoned:pool).sort((a,b)=>dueScore(b)-dueScore(a));
 w.proposal=ranked.slice(0,10).map(c=>c.id);save();nav("week");
 }
-function renderWeek(){const start=$("#weekStart").value,w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";$("#goalDisplay").textContent=`${w.goal??db.settings.goal} visitas`;
+function renderWeek(){const start=$("#weekStart").value,w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=(w.zoneMode||"auto")==="auto"?"__auto__":(w.corridor||"__auto__");$("#goalDisplay").textContent=`${w.goal??db.settings.goal} visitas`;
 const prop=(w.proposal||[]).map(contact).filter(Boolean),sel=(w.selected||[]).map(contact).filter(Boolean);
-$("#candidates").innerHTML=prop.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)} · ${esc(c.priority)} ${c.kind==="Revisar"?"· Revisar maestro":""}</small><small>Última visita: ${esc(c.referenceLastVisit||"Sin fecha")} · Próxima: ${esc(calculatedNextVisit(c)||"Sin fecha")} · Frecuencia: ${Number(c.frequency)||"Sin dato"} días</small><div class="inline-edit"><label>Última visita <input type="date" data-lastvisit="${esc(c.id)}" value="${esc(c.referenceLastVisit||"")}"></label><label>Próxima visita <input type="date" data-nextvisit="${esc(c.id)}" value="${esc(c.referenceNextVisit||"")}"></label><label>Cada (días) <input type="number" min="1" max="730" data-frequency="${esc(c.id)}" value="${esc(c.frequency||"")}"></label><button class="secondary" data-savecandidate="${esc(c.id)}">Guardar datos</button></div><small>${esc(c.notes||"")}</small></div><div class="actions"><button data-select="${esc(c.id)}">Añadir</button><button class="secondary" data-defer="${esc(c.id)}">Aplazar</button><button class="secondary" data-defer-options="${esc(c.id)}">Opciones</button><button class="danger" data-fridge="${esc(c.id)}">Nevera</button></div></div>`).join("")||'<p class="muted">Elige un corredor y pulsa “Proponer”. Si no hay candidatos en esa zona, amplía el corredor.</p>';
+$("#candidates").innerHTML=prop.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)} · ${esc(c.priority)} ${c.kind==="Revisar"?"· Revisar maestro":""}</small><small>Última visita: ${esc(c.referenceLastVisit||"Sin fecha")} · Próxima: ${esc(calculatedNextVisit(c)||"Sin fecha")} · Frecuencia: ${Number(c.frequency)||"Sin dato"} días</small><div class="inline-edit"><label>Última visita <input type="date" data-lastvisit="${esc(c.id)}" value="${esc(c.referenceLastVisit||"")}"></label><label>Próxima visita <input type="date" data-nextvisit="${esc(c.id)}" value="${esc(c.referenceNextVisit||"")}"></label><label>Cada (días) <input type="number" min="1" max="730" data-frequency="${esc(c.id)}" value="${esc(c.frequency||"")}"></label><button class="secondary" data-savecandidate="${esc(c.id)}">Guardar datos</button></div><small>${esc(c.notes||"")}</small></div><div class="actions"><button data-select="${esc(c.id)}">Añadir</button><button class="secondary" data-defer="${esc(c.id)}">Aplazar</button><button class="secondary" data-defer-options="${esc(c.id)}">Otras fechas</button><div class="defer-options" data-defer-panel="${esc(c.id)}" hidden><label>Volver a proponer desde <input type="date" data-defer-date="${esc(c.id)}" min="${esc(start)}" value="${esc(datePlus(start,14))}"></label><button class="secondary" data-defer-save="${esc(c.id)}">Aplicar fecha</button></div><button class="danger" data-fridge="${esc(c.id)}">Nevera</button><div class="fridge-options" data-fridge-panel="${esc(c.id)}" hidden><label>Motivo (opcional) <input type="text" data-fridge-reason="${esc(c.id)}" placeholder="Sin motivo"></label><button class="danger" data-fridge-confirm="${esc(c.id)}">Confirmar nevera</button></div></div></div>`).join("")||'<p class="muted">Elige un corredor y pulsa “Proponer”. Si no hay candidatos en esa zona, amplía el corredor.</p>';
 $("#selected").innerHTML=sel.map(c=>`<div class="item"><div><b>${esc(c.name)}</b><small>${esc(c.locality)} · ${esc(c.zone)}</small></div><button class="danger" data-unselect="${esc(c.id)}">Quitar</button></div>`).join("")||'<p class="muted">Todavía no has seleccionado visitas.</p>';
 $("#weekAlerts").innerHTML=conflicts(start).map(x=>`<div class="alert">Conflicto: ${esc(x.title)} el ${esc(x.date)} (${esc(x.start||"día completo")}–${esc(x.end||"")}). Se mantiene el compromiso y no se modifica ninguna cita.</div>`).join("");
 $$("#candidates [data-savecandidate]").forEach(b=>b.onclick=()=>{
@@ -149,20 +150,22 @@ c.recommendationState="deferred";c.deferredUntil=datePlus($("#weekStart").value,
 const w=weekObj();w.proposal=w.proposal.filter(x=>x!==c.id);save();
 });
 $$("#candidates [data-defer-options]").forEach(b=>b.onclick=()=>{
-const c=contact(b.dataset.deferOptions);if(!c)return;
-const choice=prompt("Opciones de aplazamiento:\\n1. Dentro de 2 semanas\\n2. Dentro de un mes\\n3. Elegir fecha");
-if(choice===null)return;
-let d=choice==="1"?datePlus($("#weekStart").value,14):choice==="2"?datePlus($("#weekStart").value,30):choice==="3"?prompt("Fecha de reaparición (AAAA-MM-DD):"):"";
-if(!d||!/^\\d{4}-\\d{2}-\\d{2}$/.test(d)){alert("Fecha no válida. No se ha cambiado el aplazamiento.");return}
-if(new Date(d+"T00:00:00")<new Date($("#weekStart").value+"T00:00:00")){alert("La fecha debe ser igual o posterior al inicio de la semana.");return}
+const panel=$(`[data-defer-panel="${CSS.escape(b.dataset.deferOptions)}"]`);if(panel)panel.hidden=!panel.hidden;
+});
+$$("#candidates [data-defer-save]").forEach(b=>b.onclick=()=>{
+const c=contact(b.dataset.deferSave);if(!c)return;
+const d=$(`[data-defer-date="${CSS.escape(c.id)}"]`).value;
+if(!d)return;
 c.recommendationState="deferred";c.deferredUntil=d;c.recommendationUpdatedAt=new Date().toISOString();
 const w=weekObj();w.proposal=w.proposal.filter(x=>x!==c.id);save();
 });
 $$("#candidates [data-fridge]").forEach(b=>b.onclick=()=>{
-const c=contact(b.dataset.fridge);if(!c)return;
-const reason=prompt("Motivo para pasar a Nevera (opcional):");
-if(reason===null)return;
-c.fridgeReason=reason.trim();setRecommendationState(c.id,"nevera");
+const panel=$(`[data-fridge-panel="${CSS.escape(b.dataset.fridge)}"]`);if(panel)panel.hidden=!panel.hidden;
+});
+$$("#candidates [data-fridge-confirm]").forEach(b=>b.onclick=()=>{
+const id=b.dataset.fridgeConfirm,c=contact(id);if(!c)return;
+c.fridgeReason=$(`[data-fridge-reason="${CSS.escape(id)}"]`)?.value.trim()||"";
+setRecommendationState(id,"nevera");
 });
 $$("#selected [data-unselect]").forEach(b=>b.onclick=()=>{const w=weekObj();w.selected=w.selected.filter(x=>x!==b.dataset.unselect);save()});
 }
@@ -177,7 +180,11 @@ const start=$("#weekStart").value,w=db.weeks[start];$("#homeWeek").innerHTML=w&&
 const next=db.commitments.filter(c=>c.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);$("#homeCommitments").innerHTML=next.map(c=>`<div class="item"><div><b>${esc(c.title)}</b><small>${esc(c.date)} · ${esc(c.start||"Todo el día")} · ${esc(c.type)}</small></div></div>`).join("")||'<p class="muted">No hay compromisos futuros.</p>';
 const due=db.contacts.filter(c=>c.followDate&&c.followDate<=today()&&status(c)!=="Cita conseguida").length;$("#stats").innerHTML=`<div class="stat"><b>${db.contacts.filter(c=>c.kind==="CRM").length}</b><small>Clientes CRM</small></div><div class="stat"><b>${db.contacts.filter(c=>c.kind==="Candidato").length}</b><small>Candidatos</small></div><div class="stat"><b>${due}</b><small>Seguimientos vencidos</small></div><div class="stat"><b>${db.commitments.filter(c=>c.date>=today()).length}</b><small>Compromisos futuros</small></div>`}
 function renderZoneOptions(selected){
-const el=$("#corridor");if(!el)return;const current=selected??el.value;const zones=[...(db.settings.zoneCatalog||[])];el.innerHTML='<option value="">La secretaria elige la mejor zona</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");if(current&&zones.some(z=>clean(z)===clean(current)))el.value=zones.find(z=>clean(z)===clean(current));else el.value="";
+const el=$("#corridor");if(!el)return;const current=selected??el.value;const zones=[...(db.settings.zoneCatalog||[])];el.innerHTML='<option value="__auto__">Que recomiende la secretaria</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)}</option>`).join("");
+const w=week();const mode=w?.zoneMode||"auto";
+if(mode==="auto")el.value="__auto__";
+else if(current&&zones.some(z=>clean(z)===clean(current)))el.value=zones.find(z=>clean(z)===clean(current));
+else el.value="__auto__";
 }
 function renderAll(){db=normalizeState(db);applyTheme();renderZoneOptions(week()?.corridor||"");renderHome();renderWeek();renderFollow();renderClients();renderCommitments();$("#goalDisplay").textContent=`${weekObj().goal??db.settings.goal} visitas`}
 function openContact(id){const c=id?contact(id):null,form=$("#contactForm");form.reset();form.elements.id.value=c?.id||"";for(const k of ["name","locality","zone","address","postalCode","province","kind","category","priority","status","followDate","unavailableUntil","referenceLastVisit","referenceNextVisit","frequency","channel","notes"])if(c&&form.elements[k])form.elements[k].value=c[k]??(k==="kind"?"Candidato":k==="category"?"B":k==="priority"?"Normal":k==="status"?"Por contactar":"");$("#contactTitle").textContent=c?"Editar contacto":"Nuevo contacto";$("#contactDialog").showModal()}
@@ -188,7 +195,7 @@ function addCommit(){const f=$("#commitForm");f.reset();f.elements.date.value=$(
 $("#commitForm").onsubmit=e=>{e.preventDefault();const c=Object.fromEntries(new FormData(e.target));if(c.start&&c.end&&c.end<=c.start){alert("La hora final debe ser posterior a la inicial.");return}db.commitments.push({...c,id:uid(),createdAt:new Date().toISOString()});$("#commitDialog").close();save()};
 function exportJson(name,obj){const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
 function migrateOld(){try{const old=JSON.parse(localStorage.getItem(OLD)||"null");if(old&&Array.isArray(old.clients)){for(const x of old.clients){const c={id:x.id||uid(),name:x.name||"",locality:x.locality||"",zone:x.currentZone||x.zone||"",address:x.address||"",kind:"CRM",category:x.category||"B",priority:x.commercialPriority||"Normal",status:"Por contactar",notes:x.notes||"",referenceLastVisit:x.lastVisit||"",frequency:x.frequency||0};if(c.name)addOrUpdate(c)}db.legacy.previousMvp=old;db.sources.migratedFrom="control_visitas_mvp";save()}}catch{}}
-$("#makeProposal").onclick=makeProposal;$("#weekStart").onchange=()=>{const w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";renderWeek()};$("#weekGoal").onchange=()=>{weekObj().goal=Number($("#weekGoal").value)||0;save()};$("#corridor").onchange=()=>{weekObj().corridor=$("#corridor").value;save()};$("#addZone").onclick=()=>{const z=prompt("Nombre de la nueva zona/corredor:");if(!z||!z.trim())return;const a=db.settings.zoneCatalog||[];if(!a.some(x=>clean(x)===clean(z)))a.push(z.trim());db.settings.zoneCatalog=a.sort((x,y)=>x.localeCompare(y,"es"));save();renderZoneOptions(z.trim())};
+$("#makeProposal").onclick=makeProposal;$("#weekStart").onchange=()=>{const w=weekObj();$("#weekGoal").value=w.goal??db.settings.goal;$("#corridor").value=w.corridor||"";renderWeek()};$("#weekGoal").onchange=()=>{weekObj().goal=Number($("#weekGoal").value)||0;save()};$("#corridor").onchange=()=>{const w=weekObj(),v=$("#corridor").value;w.zoneMode=v==="__auto__"?"auto":"manual";w.corridor=v==="__auto__"?"":v;save()};$("#addZone").onclick=()=>{const z=prompt("Nombre de la nueva zona/corredor:");if(!z||!z.trim())return;const a=db.settings.zoneCatalog||[];if(!a.some(x=>clean(x)===clean(z)))a.push(z.trim());db.settings.zoneCatalog=a.sort((x,y)=>x.localeCompare(y,"es"));save();renderZoneOptions(z.trim())};
 $("#addContact").onclick=()=>openContact();$("#newProspect").onclick=()=>{openContact();$("#contactForm").elements.kind.value="Candidato"};$("#addCommitment").onclick=addCommit;
 $("#clientSearch").oninput=renderClients;$("#clientKind").onchange=renderClients;$("#clientPriority").onchange=renderClients;$("#followSearch").oninput=renderFollow;$("#followFilter").onchange=renderFollow;
 $("#saveSettings").onclick=()=>{db.settings.goal=Number($("#defaultGoal").value)||0;db.settings.fridayMax=Number($("#fridayMax").value)||0;db.settings.wednesdayEnd=$("#wednesdayEnd").value;db.settings.theme=$("#theme").value;save();alert("Ajustes guardados.")};
