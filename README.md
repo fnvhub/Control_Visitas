@@ -1,4 +1,4 @@
-# Control_Visitas 1.3.2 — Secretaria comercial
+# Control_Visitas 1.3.3 — Secretaria comercial
 
 ## Instalación
 Sube el contenido de este ZIP a la raíz de la rama `Control_Visitas_MVP` sustituyendo `index.html`, `app.js`, `styles.css`, `manifest.webmanifest`, `sw.js` y `version.json`. Añade `datos_iniciales.json` y `version.json`. No borres iconos ni archivos ajenos a esta versión.
