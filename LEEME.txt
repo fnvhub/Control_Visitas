@@ -1,0 +1,15 @@
+CONTROL_VISITAS — PWA 1.3.9
+
+1. Descarga y descomprime este ZIP.
+2. Copia actualizar_pwa.py a la raíz local del repositorio (donde están index.html, sw.js y manifest.webmanifest).
+3. Ejecuta: python actualizar_pwa.py
+4. Sube a la rama Control_Visitas_MVP los archivos modificados:
+   index.html, manifest.webmanifest, sw.js, version.json y la carpeta icons/
+5. Conserva todos los demás archivos del repositorio.
+
+El script crea tres iconos PNG y actualiza manifiesto, metadatos de instalación,
+versión visible y caché/offline del service worker.
+
+Después de publicar, prueba instalación y modo avión en el móvil. La PWA
+precarga el shell de la aplicación; la disponibilidad offline de funciones que
+dependan de recursos externos no queda garantizada.
